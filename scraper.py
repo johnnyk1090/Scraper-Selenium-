@@ -20,7 +20,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import pandas as pd
 
-# user UI
+# user interface
 import tkinter as tk
 from tkinter import simpledialog    
 ROOT = tk.Tk()
