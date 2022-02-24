@@ -1,8 +1,7 @@
+   
 '''
 This is a web scraping project built via Selenium
-
 The website used is the https://www.lambertshealthcare.co.uk/ (supplement products)
-
 '''
 
 # bring in the Selenium librairies
@@ -42,20 +41,20 @@ class Scraper:
         def wrapper(self, msg, xpath):
             xpath = str(xpath)                    
             try:
-                time.sleep(3)
-                WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.XPATH, xpath)))                                                                     
+                time.sleep(5)
+                WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, xpath)))                                                                     
                 self.driver.find_element(By.XPATH, xpath).click()
             except TimeoutException:
                 print(msg)
-                return None                        
+                pass # in case there are not cookies or pop ups                        
         return wrapper               
     
     # method to click on search bar
     def search_bar(self, msg, xpath):
             xpath = str(xpath)                    
             try:
-                time.sleep(3)
-                element = WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.XPATH, xpath)))                                                                     
+                time.sleep(5)
+                element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, xpath)))                                                                     
                 element.click()
                 return element
             except TimeoutException:
@@ -64,9 +63,12 @@ class Scraper:
 
     # type a text on the search bar and then hit enter (after using the search_bar method)   
     def text_hit_enter(self, msg, xpath, text):
-        element = self.search_bar(msg, xpath)            
-        element.send_keys(text)
-        element.send_keys(Keys.ENTER)
+        try:
+            element = self.search_bar(msg, xpath)            
+            element.send_keys(text)
+            element.send_keys(Keys.ENTER)
+        except:    
+            pass # in case there is no search bar dont even bother
         
     # method to find multiple subcategories within the category (text)                                   
     def subcategories(self, xpath):
@@ -88,15 +90,15 @@ class Scraper:
         for i in list_subcategories:
             list_of_links.append(i.find_element(By.TAG_NAME, 'a').get_attribute('href'))
             
-        # a dictionairy with all te values of subgategories
+        # a dictionairy with all the values of subcategories
         subcategories_dict = dict(link = [], quantity_and_price = [], usage = [])
         
         # go to each one of the above links
-        # and fill in te dictionairy with the information    
+        # and fill in the dictionairy with the information of the first 5   
         for link in list_of_links[0:5]:
             
             bot.driver.get(link)
-            time.sleep(2) #delay the searching (the bot is doing the job)
+            time.sleep(2) # delay the searching (the bot is doing the job)
             subcategories_dict['link'].append(link)
             
             try:
@@ -114,21 +116,11 @@ class Scraper:
         df = pd.DataFrame(subcategories_dict)
         return tabloo.show(df)
     
-    # method for searching again 
-    def search_again(self):
-        pass
-        while True:                    
-            search_me_again = input("What do you want to search for : ")
-                
-            if search_me_again.lower() != "y" and search_me_again.lower() != "yes":           
-                exit()
-            else:
-                initiate()                                                    
-                    
     # method to close the pop-us 
     @timing_button_decorator
     def pop_up(self, msg, xpath):
-        return msg, xpath     
+        self.driver.switch_to.alert
+        self.driver.switch_to.alert.dismiss()
                            
     # method to accept the cookies of the website
     @timing_button_decorator
@@ -155,10 +147,6 @@ def initiate():
     # call the elements (quantity, price, usage)
     bot.the_list_of_links(qnt_price_xpath = '//div[@class="nogaps pt0-25 pb0-5 bd-color4 bd-bottomonly block"]', usage_xpath = '//div[@class="f-18 f-xspace f-color11 f-nobold"]')    
     
-def search_again():
-    
-    # call the list_of_lists method
-    bot.search_again()            
     
 # run it only if it is NOT imported
 if __name__ == "__main__":                
