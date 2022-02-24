@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from webdriver_manager.chrome import ChromeDriverManager
@@ -18,7 +19,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 # useful librairies
 import time
 import pandas as pd
-from selenium.common.exceptions import NoSuchElementException
 
 # user UI
 import tkinter as tk
