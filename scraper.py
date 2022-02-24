@@ -136,14 +136,14 @@ class Scraper:
         return msg, xpath
     
     
-# external methods to initiate scraping
+# external UNIVERSAL methods to initiate scraping
 bot = Scraper()                                
 def initiate():
              
-    # cookies call                           
+    # cookies accept                           
     bot.accept_cookies(msg = "No cookies here!!", xpath = '//button[@id="onetrust-accept-btn-handler"]')
     
-    # text_hit_enter to search bar call
+    # text then hit_enter to search bar 
     bot.text_hit_enter(msg = "No search bar found !!!"  , xpath = '//input[@id="searchINPUT"]', text = simpledialog.askstring(title="Search bar",
                                                                                                 prompt="What do you want to search for : "))
     # close possible pop-up 
@@ -152,7 +152,7 @@ def initiate():
     # call the container with the list of subcategories
     bot.container(xpath = '//div[@class="container-cols page-wrapper relative-children "]')
     
-    # call the list_of_links method
+    # call the elements (quantity, price, usage)
     bot.the_list_of_links(qnt_price_xpath = '//div[@class="nogaps pt0-25 pb0-5 bd-color4 bd-bottomonly block"]', usage_xpath = '//div[@class="f-18 f-xspace f-color11 f-nobold"]')    
     
 def search_again():
