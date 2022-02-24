@@ -1,12 +1,12 @@
 # Scraper-Selenium-
 
-prerequisites:
+                        prerequisites:
 
 pip install tkinter
 
 pip instal tabloo
 
-bonus elements:
+                        bonus elements:
 
 1.decorators 
 
