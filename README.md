@@ -2,7 +2,7 @@
 
                         prerequisites:
 
-pip install tkinter
+pip install tk
 
 pip instal tabloo
 
