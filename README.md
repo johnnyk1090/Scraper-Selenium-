@@ -1,6 +1,7 @@
 # Scraper-Selenium-
 
                         prerequisites:
+pip install selenium                        
 
 pip install tk
 
