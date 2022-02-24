@@ -26,7 +26,7 @@ from tkinter import simpledialog
 ROOT = tk.Tk()
 ROOT.withdraw()
 
-# Dataframe GUI
+# DataFrame GUI
 import tabloo    
 
 class Scraper:
