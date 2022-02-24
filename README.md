@@ -1,4 +1,4 @@
-# Scraper-Selenium-
+# Scraper-Selenium
 
                         prerequisites:
 pip install selenium                        
