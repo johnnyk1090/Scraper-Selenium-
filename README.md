@@ -7,6 +7,8 @@ pip install tk
 
 pip instal tabloo
 
+pip install pandas
+
                         bonus elements:
 
 1.decorators 
