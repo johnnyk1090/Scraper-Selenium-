@@ -12,6 +12,6 @@ pip instal tabloo
 
 2.tabloo gui
 
-3.user ui
+3.user interface
 
 4.universal functions
