@@ -13,7 +13,7 @@ pip install pandas
 
 1.decorators 
 
-2.pivottablejs gui to experiment with your data !!!
+2.pivottablejs gui to experiment with your data stored into your path !!!
 
 3.user interface
 
