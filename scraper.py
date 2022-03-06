@@ -3,8 +3,6 @@ This is a web scraping project built via Selenium
 The website used is the https://www.lambertshealthcare.co.uk/ (supplement products)
 '''
 
-from ast import Continue
-from lib2to3.pgen2 import driver
 import os
 
 # bring in the Selenium librairies
@@ -39,16 +37,56 @@ import json
 import urllib.request
 
 class Scraper:
+    
+    '''
+    This class is used to represent a SCRAPER.
+
+    Attributes:
+        to be finalized....
+    '''
+        
     # sample url = "https://www.lambertshealthcare.co.uk/"
     def __init__(self, url = simpledialog.askstring(title="URL input",
-                                                    prompt="Please enter your url : ")):
-        url = str(url) 
+                 prompt="Please enter your url : ")):
+        
+        """
+        Get the HTML of a URL
+        
+        Parameters
+        ----------
+        url : str
+            The URL to get the HTML of
+        
+        Returns
+        -------
+        opens maximized window (the website) of the selected url
+            
+        """        
+                
+        url = str(url)
         self.driver = Chrome(ChromeDriverManager().install())       
+        
+        
         self.driver.get(url)
+        self.driver.maximize_window()
             
     # decorator for time waiting and clicking buttons
     def timing_button_decorator(a_function):
         def wrapper(self, msg, xpath):
+            """
+            wrapper:
+            Get any function that handles the messages and xpaths of elements such as cookies and pop ups 
+            
+            Parameters
+            ----------
+            msg : str
+            xpath : XML path used for navigation through the HTML structure of the page                
+            
+            Returns
+            -------
+            clicks the window of rather cookies (accept cookies) or pop-ups (x button to close them)
+                
+            """                    
             xpath = str(xpath)                    
             try:
                 time.sleep(3)
@@ -60,8 +98,21 @@ class Scraper:
                 pass # in case there are not cookies or pop ups                        
         return wrapper               
     
-    # method to click on search bar
     def search_bar(self, msg, xpath):
+            """
+            Get the function that handles the search bar of website 
+            
+            Parameters
+            ----------
+            msg : str
+            xpath : XML path used for navigation through the HTML structure of the page                
+            
+            Returns
+            -------
+            a.clicks on the search bar 
+            b.if no search bar found --> None
+                
+            """                            
             xpath = str(xpath)                    
             try:
                 time.sleep(3)
@@ -71,28 +122,60 @@ class Scraper:
             except TimeoutException:
                 print(msg)
                 return None                                
-
-    # type a text on the search bar and then hit enter (after using the search_bar method)   
+       
     def text_hit_enter(self, msg, xpath, text):        
+            """
+            text and then hit enter method 
+            
+            Parameters
+            ----------
+            msg : str
+            xpath : XML path used for navigation through the HTML structure of the page                
+            text : input user string
+            
+            Returns
+            -------
+            a.type a text on the search bar   
+            b.and then hit enter
+                
+            """                                    
             element = self.search_bar(msg, xpath)            
             element.send_keys(text)
             element.send_keys(Keys.ENTER)
         
     # method to find multiple subcategories within the category (text)                                   
-    def subcategories(self, xpath):
+    def subcategories(self, xpath):        
         return self.driver.find_element(By.XPATH, xpath)
     
     def container(self, xpath):
-        # container posseses the method of all subcategories
+        # contains the parent of all product subcategories
         # just one level above of all subcategories            
+        # for example vitamin c is the parent 
         self.xpath = str(xpath)
         container = self.subcategories(self.xpath)
 
-        # find all the children of te container (one level below)
-        list_subcategories = container.find_elements(By.XPATH, './div')        
+        # find all the children of the container (one level below)
+        list_subcategories = container.find_elements(By.XPATH, './div')                
         return list_subcategories       
 
-    def the_list_of_links(self, qnt_price_xpath, usage_xpath, name_of_product_xpath, complete_label_xpath):  # the basic method ---> it returns the elements           
+    def the_list_of_links(self, qnt_price_xpath, usage_xpath, name_of_product_xpath, complete_label_xpath):             
+        """
+        the basic method ---> it returns the elements of products
+        
+        Parameters
+        ----------
+        qnt_price_xpath : product's quantity and price xpath
+        usage_xpath :  product's usage xpath
+        name_of_product_xpath : product's name xpath
+        complete_label_xpath : product's label with xpath
+                                       
+        Returns
+        -------
+        dictionairy of product subcategories (all turmeric range products e.g)
+        in DataFrame format.
+             
+        """        
+        
         self.label = complete_label_xpath        
         self.list_of_links = []        
         list_subcategories = self.container(self.xpath)
@@ -103,13 +186,13 @@ class Scraper:
         subcategories_dict = dict(link = [], quantity_and_price = [], usage = [], name_of_product = [])
         
         # go to each one of the above links
-        # and fill in the dictionairy with the information   
-        for link in self.list_of_links[:2]:            
+        # and fill in the dictionairy with the information          
+        for link in self.list_of_links[:2]:                        
             
             # chrome will get step by step the links of the products
             bot.driver.get(link)
             
-            time.sleep(2) # delay the searching (the bot is doing the job)  
+            time.sleep(1) # delay the searching (the bot is doing the job)  
             
             # refresh the name of product with iteration
             self.name_of_product = name_of_product_xpath          
@@ -132,27 +215,25 @@ class Scraper:
                 subcategories_dict['name_of_product'].append(name_of_product.text)
             except NoSuchElementException:    
                 subcategories_dict['name_of_product'].append('no name of product found')
+            
+            # call the image methods inside the iteration              
+            time.sleep(1)                
+            self.image_source()
+            time.sleep(1)
+            self.images_label_download()
                                   
         # reuse the dictionairy                    
         self.subcategories_dict = subcategories_dict                            
         # present the info to a table format via DataFrame 
         self.df = pd.DataFrame(subcategories_dict)
+        return self.df
                  
-        return self.df.to_json # in case you need it to json format
     
     # images links
-    def image_source(self) :        
-        time.sleep(2)                                
-        for link in self.list_of_links[:2]:            
-            
-            # chrome will get step by step the links of the products
-            self.driver.get(link)        
-        
-            self.src_label = self.driver.find_element_by_xpath(self.label).get_attribute('src') 
-            self.data_dump()
-            
-            self.source = self.src_label        
-            self.images_label_download()        
+    def image_source(self) :                                                            
+                    
+        self.src_label = self.driver.find_element_by_xpath(self.label).get_attribute('src')                             
+        self.source = self.src_label                        
     
     # create new folder 
     def create_store(self, path, label_folder):        
@@ -162,28 +243,28 @@ class Scraper:
             os.makedirs(label_folder)               
 
     # dump the data into the folder 
-    def data_dump(self):                                     
+    def data_dump(self):
+        time.sleep(1)                                     
         with open(f"{self.path}/{self.label_folder}/link_and_product_data.json", "w") as f:            
-            json.dump(self.subcategories_dict, f)                                              
+            json.dump(self.subcategories_dict, f)                                                          
                                         
     # download images & labels of products
-    def images_label_download(self):
+    def images_label_download(self) -> None:        
         # iterate and bring all the images
         urllib.request.urlretrieve(self.source, f"{self.path}/{self.label_folder}/{self.driver.find_element_by_xpath(self.name_of_product).text}.jpg")
         
     # a beautiful demonstration via pivot table js for further analysis
-    def my_gui(self):
-        file = pivot_ui(self.df)                    
-        os.path.join(f"{self.label_folder}, {file}.html")
-                                                                                                                                                                                             
+    def my_gui(self) :                        
+        return pivot_ui(self.df) 
+                                                                                                                                                                                                 
     # method to close the pop-us 
     @timing_button_decorator
-    def pop_up(self, msg, xpath) :
+    def pop_up(self, msg, xpath) -> None:
         return msg, xpath
                            
     # method to accept the cookies of the website
     @timing_button_decorator
-    def accept_cookies(self, msg, xpath) :        
+    def accept_cookies(self, msg, xpath) -> None:        
         return msg, xpath    
     
 # bot = class Scraper
@@ -193,7 +274,7 @@ bot = Scraper()
 # CONTROL PANEL --- > DO ANY SCRAPPING YOU WANT FROM ANY SUPPLEMENT SITE
 def initiate():
              
-    # cookies accept                           
+    # cookies accept  (it can be used for pop-ups too)                         
     bot.accept_cookies(msg = "No cookies here!!", xpath = '//button[@id="onetrust-accept-btn-handler"]')    
     
     # text then hit_enter to search bar 
@@ -207,22 +288,23 @@ def initiate():
     # call the container with the list of subcategories
     bot.container(xpath = '//div[@class="container-cols page-wrapper relative-children "]')
     
-    # call the elements (quantity and price, usage, name, label)
-    bot.the_list_of_links(qnt_price_xpath = '//div[@class="nogaps pt0-25 pb0-5 bd-color4 bd-bottomonly block"]', 
-                          usage_xpath = '//div[@class="f-18 f-xspace f-color11 f-nobold"]',                           
-                          name_of_product_xpath = '//h1[@class="mt0-5 mb0 f-30 f-color6 f-bold"]',
-                          complete_label_xpath = '//img[@id="mainImage"]')
-        
     # call the function to create folder for the images
     # enter the path you want this to be sent 
     bot.create_store(path = simpledialog.askstring(title="Path",
                     prompt="Type the path you want to create the folder : "),
                     label_folder = simpledialog.askstring(title="Folder Name",
-                    prompt="Name the folder of your scrapping : "))                    
+                    prompt="Name the folder of your scrapping : "))                        
     
-    # get the link of images 
-    bot.image_source()
+    # call the elements (quantity and price, usage, name, label)
+    bot.the_list_of_links(qnt_price_xpath = '//div[@class="nogaps pt0-25 pb0-5 bd-color4 bd-bottomonly block"]', 
+                          usage_xpath = '//div[@class="f-18 f-xspace f-color11 f-nobold"]',                           
+                          name_of_product_xpath = '//h1[@class="mt0-5 mb0 f-30 f-color6 f-bold"]',
+                          complete_label_xpath = '//img[@id="mainImage"]')        
     
+    # dump the data in json format in the folder 
+    bot.data_dump()
+    
+    # call the pivot table js method
     bot.my_gui()
                 
 # run it only if it is NOT imported
