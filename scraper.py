@@ -3,10 +3,19 @@ This is a web scraping project built via Selenium
 The website used is the https://www.lambertshealthcare.co.uk/ (supplement products)
 '''
 
+# essential librairies
 import os
+import uuid
+import sqlalchemy
+from sqlalchemy import create_engine
+import psycopg2
+
+# library that allows us to work with aws from our script
+import boto3
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
 
 # bring in the Selenium librairies
-from fileinput import filename
 from selenium.webdriver import Chrome 
 from selenium.webdriver.common.by import By 
 from selenium.webdriver.support.ui import WebDriverWait
@@ -55,14 +64,8 @@ class Scraper:
         Parameters
         ----------
         url : str
-            The URL to get the HTML of
-        
-        Returns
-        -------
-        opens maximized window (the website) of the selected url
-            
-        """        
-                
+            The URL to get the HTML of        
+        """                        
         url = str(url)
         self.driver = Chrome(ChromeDriverManager().install())       
         
@@ -132,13 +135,7 @@ class Scraper:
             msg : str
             xpath : XML path used for navigation through the HTML structure of the page                
             text : input user string
-            
-            Returns
-            -------
-            a.type a text on the search bar   
-            b.and then hit enter
-                
-            """                                    
+            """
             element = self.search_bar(msg, xpath)            
             element.send_keys(text)
             element.send_keys(Keys.ENTER)
@@ -175,7 +172,6 @@ class Scraper:
         in DataFrame format.
              
         """        
-        
         self.label = complete_label_xpath        
         self.list_of_links = []        
         list_subcategories = self.container(self.xpath)
@@ -183,14 +179,14 @@ class Scraper:
             self.list_of_links.append(i.find_element(By.TAG_NAME, 'a').get_attribute('href'))
             
         # a dictionairy with all the values of subcategories
-        subcategories_dict = dict(link = [], quantity_and_price = [], usage = [], name_of_product = [])
+        subcategories_dict = dict(uuid1 = [], uuid4 = [], link = [], quantity_and_price = [], usage = [], name_of_product = [])
         
         # go to each one of the above links
         # and fill in the dictionairy with the information          
-        for link in self.list_of_links[:2]:                        
+        for link in self.list_of_links[:5]:                        
             
             # chrome will get step by step the links of the products
-            bot.driver.get(link)
+            self.driver.get(link)
             
             time.sleep(1) # delay the searching (the bot is doing the job)  
             
@@ -200,18 +196,28 @@ class Scraper:
             # it will append the elements to the subcategories dictionairy
             subcategories_dict['link'].append(link)            
             
+            # it will append the unique id to the subcategories dictionairy
+            uuid1 = str(uuid.uuid1())
+            self.uuid1 = uuid1                    
+            subcategories_dict['uuid1'].append(uuid1)
+            
+            
+            uuid4 = str(uuid.uuid4())
+            self.uuid4 = uuid4
+            subcategories_dict['uuid4'].append(uuid4)
+            
             try:
-                quantity_and_price = bot.driver.find_element(By.XPATH, qnt_price_xpath) 
+                quantity_and_price = self.driver.find_element(By.XPATH, qnt_price_xpath) 
                 subcategories_dict['quantity_and_price'].append(quantity_and_price.text.split('£'))
             except NoSuchElementException:    
                 subcategories_dict['quantity_and_price'].append('quantity or price not found')                        
             try:    
-                usage = bot.driver.find_element(By.XPATH, usage_xpath)                                                                    
+                usage = self.driver.find_element(By.XPATH, usage_xpath)                                                                    
                 subcategories_dict['usage'].append(usage.text)
             except NoSuchElementException:    
                 subcategories_dict['usage'].append('usage not found')
             try:    
-                name_of_product = bot.driver.find_element(By.XPATH, name_of_product_xpath)                                                                    
+                name_of_product = self.driver.find_element(By.XPATH, name_of_product_xpath)                                                                    
                 subcategories_dict['name_of_product'].append(name_of_product.text)
             except NoSuchElementException:    
                 subcategories_dict['name_of_product'].append('no name of product found')
@@ -226,14 +232,11 @@ class Scraper:
         self.subcategories_dict = subcategories_dict                            
         # present the info to a table format via DataFrame 
         self.df = pd.DataFrame(subcategories_dict)
-        return self.df
-                 
+        return self.df                 
     
     # images links
-    def image_source(self) :                                                            
-                    
-        self.src_label = self.driver.find_element_by_xpath(self.label).get_attribute('src')                             
-        self.source = self.src_label                        
+    def image_source(self) :                                                                                
+        self.src_label = self.driver.find_element_by_xpath(self.label).get_attribute('src')                                 
     
     # create new folder 
     def create_store(self, path, label_folder):        
@@ -251,11 +254,35 @@ class Scraper:
     # download images & labels of products
     def images_label_download(self) -> None:        
         # iterate and bring all the images
-        urllib.request.urlretrieve(self.source, f"{self.path}/{self.label_folder}/{self.driver.find_element_by_xpath(self.name_of_product).text}.jpg")
+        urllib.request.urlretrieve(self.src_label, f"{self.path}/{self.label_folder}/{self.uuid1}_{self.uuid4}_{self.driver.find_element_by_xpath(self.name_of_product).text}.jpg")                
         
     # a beautiful demonstration via pivot table js for further analysis
     def my_gui(self) :                        
-        return pivot_ui(self.df) 
+        return pivot_ui(self.df)                 
+                
+    def bucket_interraction(self) -> None:        
+        conn = S3Connection()
+                        
+        bucket = conn.get_bucket('scraper-aicore')
+
+        # upload the folder created to the bucket
+        for root, dirs, files in os.walk(f"{self.label_folder}"):
+            for name in files:
+                path = root.split(os.path.sep)[1:]
+                path.append(name)
+                key_id = os.path.join(*path)
+                k = Key(bucket)
+                k.key = key_id
+                k.set_contents_from_filename(os.path.join(root, name))
+                
+    def tabular_data(self, database_type, dbapi, endpoint, user, password, port, database) -> None:        
+        # upload the dictionary with product to amazon RDS
+        engine = create_engine(f"{database_type}+{dbapi}://{user}:{password}@{endpoint}:{port}/{database}")
+        self.df.to_sql(f'{self.label_folder}', engine, if_exists='replace')        
+        
+        # access the sql table
+        df = pd.read_sql_table(f'{self.label_folder}', engine)
+        print(df.head())
                                                                                                                                                                                                  
     # method to close the pop-us 
     @timing_button_decorator
@@ -265,14 +292,14 @@ class Scraper:
     # method to accept the cookies of the website
     @timing_button_decorator
     def accept_cookies(self, msg, xpath) -> None:        
-        return msg, xpath    
-    
-# bot = class Scraper
-# driver is Chrome
-bot = Scraper()                                 
+        return msg, xpath        
 
-# CONTROL PANEL --- > DO ANY SCRAPPING YOU WANT FROM ANY SUPPLEMENT SITE
+# CONTROL PANEL --- > DO ANY SCRAPING YOU WANT FROM ANY SUPPLEMENT SITE
 def initiate():
+    
+    # bot = class Scraper
+    # driver is Chrome
+    bot = Scraper()                                 
              
     # cookies accept  (it can be used for pop-ups too)                         
     bot.accept_cookies(msg = "No cookies here!!", xpath = '//button[@id="onetrust-accept-btn-handler"]')    
@@ -293,7 +320,7 @@ def initiate():
     bot.create_store(path = simpledialog.askstring(title="Path",
                     prompt="Type the path you want to create the folder : "),
                     label_folder = simpledialog.askstring(title="Folder Name",
-                    prompt="Name the folder of your scrapping : "))                        
+                    prompt="Name the folder of your scraping : "))                        
     
     # call the elements (quantity and price, usage, name, label)
     bot.the_list_of_links(qnt_price_xpath = '//div[@class="nogaps pt0-25 pb0-5 bd-color4 bd-bottomonly block"]', 
@@ -305,9 +332,22 @@ def initiate():
     bot.data_dump()
     
     # call the pivot table js method
-    bot.my_gui()
+    bot.my_gui()    
+    
+    # start interracting with bucket 
+    # upload the whole folder 
+    bot.bucket_interraction()
+    
+    # RDS TIME!
+    bot.tabular_data(database_type = 'postgresql',
+                     dbapi = 'psycopg2',
+                     endpoint = 'aicoredb.ctuapz5fv9z4.eu-central-1.rds.amazonaws.com', 
+                     user = 'postgres',
+                     password = 'Twinperama10',
+                     port = 5432,
+                     database = 'postgres'
+)
                 
 # run it only if it is NOT imported
 if __name__ == "__main__":                
     initiate()
-    Chrome(ChromeDriverManager().install()).back()
