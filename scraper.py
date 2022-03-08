@@ -9,6 +9,7 @@ import uuid
 import sqlalchemy
 from sqlalchemy import create_engine
 import psycopg2
+from tqdm import tqdm
 
 # library that allows us to work with aws from our script
 import boto3
@@ -183,7 +184,7 @@ class Scraper:
         
         # go to each one of the above links
         # and fill in the dictionairy with the information          
-        for link in self.list_of_links[:5]:                        
+        for link in self.list_of_links:                        
             
             # chrome will get step by step the links of the products
             self.driver.get(link)
@@ -345,9 +346,13 @@ def initiate():
                      user = 'postgres',
                      password = 'Twinperama10',
                      port = 5432,
-                     database = 'postgres'
-)
+                     database = 'postgres')
+    
+def keep_playing():    
+    for i in tqdm(range(50)):
+        initiate()
                 
 # run it only if it is NOT imported
-if __name__ == "__main__":                
+if __name__ == "__main__":                    
     initiate()
+    keep_playing()
