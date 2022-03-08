@@ -20,3 +20,7 @@ pip install pandas
 4.universal functions for all supplement websites (working as a control panel)
 
 5.creation of local folders for saving multiple data
+
+6.infinite scrapping of given website
+
+7.AMAZON RDS-BUCKET utilization for stored info (json files, images with unique ids) 
