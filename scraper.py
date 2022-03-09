@@ -184,7 +184,7 @@ class Scraper:
         
         # go to each one of the above links
         # and fill in the dictionairy with the information          
-        for link in self.list_of_links:                        
+        for link in self.list_of_links[:2]:                        
             
             # chrome will get step by step the links of the products
             self.driver.get(link)
@@ -198,15 +198,17 @@ class Scraper:
             subcategories_dict['link'].append(link)            
             
             # it will append the unique id to the subcategories dictionairy
+            time.sleep(1)
             uuid1 = str(uuid.uuid1())
             self.uuid1 = uuid1                    
             subcategories_dict['uuid1'].append(uuid1)
             
-            
+            time.sleep(1)
             uuid4 = str(uuid.uuid4())
             self.uuid4 = uuid4
             subcategories_dict['uuid4'].append(uuid4)
             
+            time.sleep(1)
             try:
                 quantity_and_price = self.driver.find_element(By.XPATH, qnt_price_xpath) 
                 subcategories_dict['quantity_and_price'].append(quantity_and_price.text.split('£'))
@@ -241,6 +243,7 @@ class Scraper:
     
     # create new folder 
     def create_store(self, path, label_folder):        
+        time.sleep(1)
         self.label_folder = label_folder # reusable 
         self.path = path # reusable
         if not os.path.exists(label_folder):
@@ -249,7 +252,7 @@ class Scraper:
     # dump the data into the folder 
     def data_dump(self):
         time.sleep(1)                                     
-        with open(f"{self.path}/{self.label_folder}/link_and_product_data.json", "w") as f:            
+        with open(f"{self.path}/{self.label_folder}/link_and_product_data.json", "a") as f:            
             json.dump(self.subcategories_dict, f)                                                          
                                         
     # download images & labels of products
@@ -257,11 +260,13 @@ class Scraper:
         # iterate and bring all the images
         urllib.request.urlretrieve(self.src_label, f"{self.path}/{self.label_folder}/{self.uuid1}_{self.uuid4}_{self.driver.find_element_by_xpath(self.name_of_product).text}.jpg")                
         
-    # a beautiful demonstration via pivot table js for further analysis
+    # a beautiful demonstration via pivot table js for further analysis    
     def my_gui(self) :                        
+        time.sleep(1)
         return pivot_ui(self.df)                 
                 
-    def bucket_interraction(self) -> None:        
+    def bucket_interraction(self) -> None:   
+        time.sleep(1)     
         conn = S3Connection()
                         
         bucket = conn.get_bucket('scraper-aicore')
@@ -277,9 +282,10 @@ class Scraper:
                 k.set_contents_from_filename(os.path.join(root, name))
                 
     def tabular_data(self, database_type, dbapi, endpoint, user, password, port, database) -> None:        
+        time.sleep(1)
         # upload the dictionary with product to amazon RDS
         engine = create_engine(f"{database_type}+{dbapi}://{user}:{password}@{endpoint}:{port}/{database}")
-        self.df.to_sql(f'{self.label_folder}', engine, if_exists='replace')        
+        self.df.to_sql(f'{self.label_folder}', engine, if_exists='append')        
         
         # access the sql table
         df = pd.read_sql_table(f'{self.label_folder}', engine)
@@ -344,12 +350,14 @@ def initiate():
                      dbapi = 'psycopg2',
                      endpoint = 'aicoredb.ctuapz5fv9z4.eu-central-1.rds.amazonaws.com', 
                      user = 'postgres',
-                     password = 'Twinperama10',
+                     password = simpledialog.askstring(title="AWS PASSWORD (sensitive data)",
+                                prompt="Type your AWS password : "),
                      port = 5432,
                      database = 'postgres')
     
-def keep_playing():    
-    for i in tqdm(range(50)):
+def keep_playing():
+    # 2 times totally replay
+    for i in tqdm(range(1)):
         initiate()
                 
 # run it only if it is NOT imported
