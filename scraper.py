@@ -287,12 +287,12 @@ class Scraper:
                                                                                                                                                                                                  
     # method to close the pop-us 
     @timing_button_decorator
-    def pop_up(self, msg, xpath) -> None:
+    def pop_up(self, msg, xpath) :
         return msg, xpath
                            
     # method to accept the cookies of the website
     @timing_button_decorator
-    def accept_cookies(self, msg, xpath) -> None:        
+    def accept_cookies(self, msg, xpath) :        
         return msg, xpath        
 
 # CONTROL PANEL --- > DO ANY SCRAPING YOU WANT FROM ANY SUPPLEMENT SITE
