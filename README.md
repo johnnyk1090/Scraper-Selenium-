@@ -1,6 +1,6 @@
 # Scraper-Selenium
 
-Scrap any **UK** supplement website wit a search bar !!!!
+Scrap any **UK** supplement website with a search bar !!!!
 
                         prerequisites:
 pip install selenium                        
