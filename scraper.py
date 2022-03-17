@@ -6,7 +6,6 @@ The website used is the https://www.lambertshealthcare.co.uk/ (supplement produc
 # essential librairies
 import os
 import shutil
-from unicodedata import category
 import uuid
 import sqlalchemy
 from sqlalchemy import create_engine
