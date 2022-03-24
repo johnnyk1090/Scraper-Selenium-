@@ -342,7 +342,7 @@ class Scraper:
         self.df_3 = pd.read_sql_table(f'{today}_{self.label_folder}', engine) 
         
         # print the tables created in te database
-        print(self.df_2.head(), "\n\n", self.df_3)
+        print(self.df_2, "\n\n", self.df_3)
     
     # method to close the pop-us and accept cookies
     @timing_button_decorator
