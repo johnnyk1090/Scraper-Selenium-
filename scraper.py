@@ -7,9 +7,7 @@ The website used is the https://www.lambertshealthcare.co.uk/ (supplement produc
 import os
 import shutil
 import uuid
-import sqlalchemy
 from sqlalchemy import create_engine
-import psycopg2
 from tqdm import tqdm
 import time
 from datetime import date
@@ -17,7 +15,6 @@ from ufid import generate_user_friendly_id
 import pandas as pd
 
 # library that allows us to work with aws from our script
-import boto3
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
